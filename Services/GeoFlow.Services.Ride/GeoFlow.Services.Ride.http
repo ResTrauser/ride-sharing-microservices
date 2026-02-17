@@ -1,0 +1,6 @@
+@GeoFlow.Services.Ride_HostAddress = http://localhost:5145
+
+GET {{GeoFlow.Services.Ride_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,6 @@
+@GeoFlow.Services.Finance_HostAddress = http://localhost:5030
+
+GET {{GeoFlow.Services.Finance_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
