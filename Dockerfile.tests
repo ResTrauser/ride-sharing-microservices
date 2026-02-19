@@ -1,0 +1,15 @@
+# Dockerfile for running tests
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+WORKDIR /src
+
+# Copy all projects
+COPY . .
+
+# Restore dependencies
+RUN dotnet restore
+
+# Run tests
+# Note: For Testcontainers to work, you must mount the Docker socket when running this container:
+# docker run -v /var/run/docker.sock:/var/run/docker.sock <image>
+CMD ["dotnet", "test", "Tests/GeoFlow.Tests/GeoFlow.Tests.csproj", "--logger:trx"]

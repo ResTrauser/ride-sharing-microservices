@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,8 @@ using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Sinks.Elasticsearch;
 
 namespace Microsoft.Extensions.Hosting;
 
@@ -21,6 +24,8 @@ public static class Extensions
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.ConfigureOpenTelemetry();
+
+        builder.ConfigureSerilog();
 
         builder.AddDefaultHealthChecks();
 
@@ -40,6 +45,31 @@ public static class Extensions
         // {
         //     options.AllowedSchemes = ["https"];
         // });
+
+        return builder;
+    }
+
+    public static TBuilder ConfigureSerilog<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddSerilog((services, loggerConfiguration) =>
+        {
+            loggerConfiguration
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .WriteTo.Console();
+
+            var elasticsearchUri = builder.Configuration.GetConnectionString("elasticsearch");
+            if (!string.IsNullOrEmpty(elasticsearchUri))
+            {
+                loggerConfiguration.WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(elasticsearchUri))
+                {
+                    AutoRegisterTemplate = true,
+                    IndexFormat = $"{builder.Environment.ApplicationName.ToLower().Replace(".", "-")}-{DateTime.UtcNow:yyyy-MM}",
+                    NumberOfShards = 2,
+                    NumberOfReplicas = 1
+                });
+            }
+        });
 
         return builder;
     }
